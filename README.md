@@ -1,0 +1,2 @@
+# LinkedinTextEdittor
+Linkedin Text formatter
