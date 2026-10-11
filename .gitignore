@@ -134,3 +134,10 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+LinkedIn_Text_Formatter_Application_Specification.docx
+
+# Browser test artifacts
+test-results/
+test-results-*/
+playwright-report/

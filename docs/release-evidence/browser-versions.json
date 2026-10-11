@@ -1,0 +1,10 @@
+{
+  "testedDate": "2026-10-11",
+  "os": "Windows NT 10.0.26200.0",
+  "versions": {
+    "Chrome": "154.0.8037.98",
+    "Edge": "155.0.4283.45",
+    "Firefox": "157.0",
+    "Playwright WebKit": "27.2"
+  }
+}

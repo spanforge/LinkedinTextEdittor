@@ -1,0 +1,10 @@
+import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
+const input = JSON.parse(await readFile('node_modules/emoji-datasource/emoji.json', 'utf8'));
+const unicode = code => code.split('-').map(h => String.fromCodePoint(parseInt(h, 16))).join('');
+const skinCodes = ['1F3FB','1F3FC','1F3FD','1F3FE','1F3FF'];
+const data = input.filter(e => !e.obsoleted_by).map(e => ({ id: e.short_name, name: e.name.toLowerCase().replaceAll('_', ' '), keywords: e.short_names.join(' ').replaceAll('_',' ') + ' ' + e.short_names.join(' ').replaceAll('_','') + ' ' + e.short_names.join(' '), category: e.category, emoji: unicode(e.unified), tones: e.skin_variations ? skinCodes.map(t => { const entry = Object.entries(e.skin_variations).find(([key]) => key.split('-').every(code => code === t)); return entry ? unicode(entry[1].unified) : ''; }) : [] }));
+data.push(...[['check','✓'],['arrow','→'],['star','★'],['bullet','•'],['cross','✗']].map(([id,emoji]) => ({ id: 'symbol-'+id, name: id, keywords: 'professional symbol '+id, category: 'Professional symbols', emoji, tones: [] })));
+await mkdir('public/data', { recursive: true }); await mkdir('docs/licenses', { recursive: true });
+await writeFile('public/data/emoji.json', JSON.stringify(data));
+await copyFile('node_modules/emoji-datasource/LICENSE', 'docs/licenses/emoji-datasource.txt');
+console.log(`Prepared ${data.length} emoji and symbols from emoji-datasource 16.0.0.`);

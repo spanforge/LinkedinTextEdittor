@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "urn:sriram-advisory:linkedin-formatter:backup:1",
+  "title": "LinkedIn Text Formatter backup v1", "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "drafts", "snippets", "preferences", "recent"],
+  "$comment": "Runtime validation rejects duplicate identifiers, files larger than 1 MB, and source-size violations before changing any stored data.",
+  "properties": {
+    "schemaVersion": { "const": 1 }, "kind": { "const": "backup" }, "drafts": { "type": "array", "maxItems": 50, "items": { "$ref": "draft.schema.json#/$defs/draft" } },
+    "snippets": { "type": "array", "maxItems": 30, "items": { "type": "object", "additionalProperties": false, "required": ["id", "title", "text"], "properties": { "id": { "type": "string", "minLength": 1 }, "title": { "type": "string", "minLength": 1, "maxLength": 200 }, "text": { "type": "string", "maxLength": 1000 } } } },
+    "preferences": { "allOf": [{ "$ref": "draft.schema.json#/$defs/preferences" }, { "required": ["theme", "guidance", "dismissedIntro"] }] },
+    "recent": { "type": "array", "maxItems": 30, "items": { "type": "string", "maxLength": 100 } }
+  }
+}

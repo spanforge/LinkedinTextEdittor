@@ -1,0 +1,19 @@
+{
+  "testedDate": "2026-10-11",
+  "os": "Windows (execution host)",
+  "browser": "154.0.8037.98",
+  "sourceUnits": 3000,
+  "toolbarToPreviewMs": [
+    7.5,
+    5.7,
+    4.9,
+    3.9,
+    5.5
+  ],
+  "errors": [],
+  "notes": [
+    "Desktop headless browser timings include React render and preview DOM update.",
+    "This is not a representative mid-range mobile device benchmark.",
+    "Real screen-reader, touch-selection and LinkedIn composer checks remain pending."
+  ]
+}
