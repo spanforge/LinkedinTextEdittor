@@ -27,7 +27,7 @@ test('selected sentence and no-selection typing follow mark/Enter rules', async 
 
 test('Advanced overlays replace each other and undo restores text', async ({ page }) => {
   await paste(page, 'A9! 👍🏽 é'); await selectAll(page); await openTools(page);
-  await page.getByRole('button', { name: 'Strike-through', exact: true }).click(); await expect(output(page)).toHaveText('A̶9̶!̶ 👍🏽 é');
+  await page.getByRole('button', { name: 'Strike-through', exact: true }).click(); await expect(output(page)).toHaveText('A̵9̵!̵ 👍🏽 é');
   await page.getByRole('button', { name: 'Underline', exact: true }).click(); await expect(output(page)).toHaveText('A̲9̲!̲ 👍🏽 é');
   await page.getByRole('button', { name: 'Underline', exact: true }).click(); await expect(output(page)).toHaveText('A9! 👍🏽 é');
   await page.getByRole('button', { name: 'Close dialog' }).click();

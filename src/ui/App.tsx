@@ -5,7 +5,7 @@ import { closeHistory } from '@tiptap/pm/history';
 import { config } from '../config';
 import { fromText, parseImport, sourceText, validateDoc, type Doc, type Draft, type Backup } from '../model';
 import { extensions, findMatches, insertPlain, listOperation, replaceDocument, replaceMatches } from '../editor';
-import { checks, serialize } from '../unicode';
+import { checks, serialize, segments } from '../unicode';
 import { cleanImported, cleanLists, cleanMarkdown, example, spacing, templates } from '../operations';
 import { copyText, download, exportJSON, loadEmoji, type EmojiEntry } from '../services';
 import { setupOffline } from '../offline';
@@ -17,6 +17,19 @@ import { Dialog } from './Dialog';
 
 type Confirm = { title: string; text: string; action: () => void | Promise<void>; destructive?: boolean; label?: string };
 type Preview = { title: string; before: string; doc: Doc; note: string };
+function previewText(text: string) {
+  // Draw a real strike line instead of relying on font-specific positioning
+  // of combining strokes. Keep every output character in DOM order.
+  const graphemes = segments(text);
+  const runs: { text: string; strike: boolean }[] = [];
+  for (const { segment } of graphemes) {
+    const strike = /[\u0335\u0336]/u.test(segment);
+    const previous = runs.at(-1);
+    if (previous?.strike === strike) previous.text += segment;
+    else runs.push({ text: segment, strike });
+  }
+  return runs.map((run, index) => run.strike ? <span className="preview-strike" key={index}>{Array.from(run.text).map((char, i) => /[\u0335\u0336]/u.test(char) ? <span className="preview-stroke-character" key={i}>{char}</span> : char)}</span> : run.text);
+}
 export function App() {
   const w = useWorkbench();
   return w.ready ? <Workspace key={w.draft.id} w={w} /> : <main className="loading"><div className="brand-icon">T</div><h1>Opening your writing space</h1><p>Loading local drafts before the editor starts…</p></main>;
@@ -190,7 +203,7 @@ function Workspace({ w }: { w: Workbench }) {
       </section>
       <section role={mobile ? 'tabpanel' : undefined} aria-labelledby={mobile ? 'tab-preview' : undefined} id="panel-preview" className="preview-card" aria-label="Preview"><div className="card-heading"><div><span className="eyebrow">PREVIEW</span><h2>{reading ? 'Plain text' : 'Formatted text'}</h2></div><div className="segmented" aria-label="Approximate preview width"><button aria-pressed={previewWidth === 'desktop'} onClick={() => setPreviewWidth('desktop')}>Desktop</button><button aria-pressed={previewWidth === 'mobile'} onClick={() => setPreviewWidth('mobile')}>Mobile</button></div></div>
         <div className="preview-options"><div className="segmented" aria-label="Text version"><button aria-pressed={!reading} onClick={() => setReading(false)}>Formatted</button><button aria-pressed={reading} onClick={() => setReading(true)}>Plain text</button></div><label><input type="checkbox" checked={showChanges} onChange={e => setShowChanges(e.target.checked)} disabled={reading} /> Show changes</label></div>
-        <div className={`output-wrap ${previewWidth}`}><div className="output" data-testid="export-output" tabIndex={0} aria-label={reading ? 'Ordinary source reading view' : 'Exact Unicode export'}>{serialized.output ? reading ? serialized.plain : showChanges ? serialized.pieces.map((p,i) => <span key={i} className={`piece ${p.kind}`} title={p.kind}>{p.text}</span>) : serialized.output : <span className="preview-placeholder">Your finished words will appear here.<br/><br/>This preview shows the exact text you’ll copy.</span>}</div></div>
+        <div className={`output-wrap ${previewWidth}`}><div className="output" data-testid="export-output" tabIndex={0} aria-label={reading ? 'Ordinary source reading view' : 'Exact Unicode export'}>{serialized.output ? reading ? previewText(serialized.plain) : showChanges ? serialized.pieces.map((p,i) => <span key={i} className={`piece ${p.kind}`} title={p.kind}>{previewText(p.text)}</span>) : previewText(serialized.output) : <span className="preview-placeholder">Your finished words will appear here.<br/><br/>This preview shows the exact text you’ll copy.</span>}</div></div>
         {showChanges && !reading && <div className="legend"><span className="substituted">Substituted</span><span className="protected">Protected</span><span className="skipped">Skipped</span></div>}
         <div className="preview-bottom"><span>{reading ? 'Plain text will be copied' : 'Exact text - approximate layout'}</span><button onClick={() => go('/help/compatibility')}>About preview ↗</button></div>
       </section>

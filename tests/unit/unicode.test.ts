@@ -26,8 +26,16 @@ describe('Unicode export contract', () => {
   });
   it('overlays eligible source once, never emojis/combining clusters/whitespace', () => {
     const doc = styled('A9! é e\u0301 👍🏽\n', [{ type: 'bold' }, { type: 'strike' }]);
-    expect(serialize(doc).output).toBe('𝗔\u0336𝟵\u0336!\u0336 é e\u0301 👍🏽\n'); expect(serialize(doc)).toEqual(serialize(doc));
+    expect(serialize(doc).output).toBe('𝗔\u0335𝟵\u0335!\u0335 é e\u0301 👍🏽\n'); expect(serialize(doc)).toEqual(serialize(doc));
     expect(serialize(styled('A\u0336', [{ type: 'strike' }])).output).toBe('A\u0336');
+  });
+  it('strikes imported styled letters without adding duplicate overlays', () => {
+    for (const style of Object.keys(goldens.styles) as Style[]) {
+      const text = Array.from('Hello9', c => mapChar(c, style)).join('');
+      const expected = Array.from(text, c => c + '\u0335').join('');
+      expect(serialize(styled(text, [{ type: 'strike' }])).output).toBe(expected);
+      expect(serialize(styled(expected, [{ type: 'strike' }])).output).toBe(expected);
+    }
   });
   it('preserves repeated blanks, source spacing and trailing newlines with one explicit list prefix', () => {
     const doc = fromText('one\ntwo\n\nthree\n\n'); for (const p of doc.content) p.attrs = { listType: 'number' };

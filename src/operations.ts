@@ -49,13 +49,13 @@ export function cleanImported(doc: Doc): { doc: Doc; skipped: number } {
       if (n.type === 'hardBreak') { out.push(n); continue; }
       for (const { segment } of segments(n.text)) {
         const chars = Array.from(segment); const converted = reverse.get(chars[0]); const base = converted?.char || chars[0];
-        const overlay = chars.length === 2 && ['\u0332', '\u0336'].includes(chars[1]) && /^[\x21-\x7e]$/.test(base) ? chars[1] : undefined;
+        const overlay = chars.length === 2 && ['\u0332', '\u0335', '\u0336'].includes(chars[1]) && /^[\x21-\x7e]$/.test(base) ? chars[1] : undefined;
         if ((converted && chars.length === 1) || overlay) {
           const marks: Mark[] = [...(n.marks || []).filter(m => !['bold', 'italic', 'family', 'strike', 'underline'].includes(m.type)), ...(converted?.marks || [])];
           if (overlay) marks.push({ type: overlay === '\u0332' ? 'underline' : 'strike' });
           pushText(out, base, marks);
         } else {
-          if (chars.some(c => /[\u0332\u0336]/.test(c) || (c.codePointAt(0)! >= 0x1d400 && c.codePointAt(0)! <= 0x1d7ff))) skipped++;
+          if (chars.some(c => /[\u0332\u0335\u0336]/.test(c) || (c.codePointAt(0)! >= 0x1d400 && c.codePointAt(0)! <= 0x1d7ff))) skipped++;
           pushText(out, segment, n.marks || []);
         }
       }

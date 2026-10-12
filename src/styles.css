@@ -43,3 +43,7 @@ button{transition:border-color .15s}
 .update-notice{border:2px solid var(--blue);padding:16px;box-shadow:var(--shadow);font-size:14px}.update-notice>button.primary{background:var(--blue);color:#fff}.update-notice>button.primary:hover{background:#1d4ed8}[data-theme=dark] .update-notice>button.primary{color:#102039}.draft-empty-results{padding:16px;background:var(--subtle);border-radius:8px}.draft-empty-results p{margin-bottom:12px}
 @media(max-width:767px){.mobile-action-bar:has(.plain-copy:not([hidden])){grid-template-columns:1fr 1.3fr 1.2fr;gap:6px}.mobile-action-bar button{padding:8px;font-size:14px}.plain-copy[hidden]{display:none}.update-notice{align-items:flex-start}.update-notice>button{width:100%}}
 [data-theme=dark] .update-notice>button.primary:hover{background:#aacbff;color:#102039}
+/* Segoe UI positions the legacy long stroke overlay near the baseline. */
+.output{font-family:Arial,Helvetica,sans-serif}
+.preview-strike{text-decoration-line:line-through;text-decoration-thickness:1px;text-decoration-color:currentColor}
+.preview-stroke-character{font-size:0;line-height:0}

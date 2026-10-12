@@ -62,12 +62,14 @@ export function serialize(doc: Doc): Serialized {
       const marks = runs[ri]?.marks || []; const has = (t: Mark['type']) => marks.some(m => m.type === t);
       const bold = has('bold'), italic = has('italic'), serif = marks.some(m => m.type === 'family' && m.attrs?.family === 'serif');
       const style: Style | undefined = bold || italic ? `${serif ? 'serif' : 'sans'}${bold && italic ? 'Both' : bold ? 'Bold' : 'Italic'}` as Style : undefined;
-      const overlay = has('underline') ? '\u0332' : has('strike') ? '\u0336' : '';
+      const overlay = has('underline') ? '\u0332' : has('strike') ? '\u0335' : '';
       if (/^[A-Za-z]$/.test(g) && !protectedToken) { result.eligibleLetters++; if (style) result.styledLetters++; }
-      if (Array.from(g).some(c => reverse.has(c) || /[\u0332\u0336]/.test(c) || (c.codePointAt(0)! >= 0x1d400 && c.codePointAt(0)! <= 0x1d7ff))) result.imported++;
+      if (Array.from(g).some(c => reverse.has(c) || /[\u0332\u0335\u0336]/.test(c) || (c.codePointAt(0)! >= 0x1d400 && c.codePointAt(0)! <= 0x1d7ff))) result.imported++;
       if (protectedToken) { append(g, 'protected'); continue; }
       let out = style ? mapChar(g, style) : g;
-      if (overlay && /^[\x21-\x7e]$/.test(g)) { out += overlay; result.overlays++; }
+      // Imported mathematical letters are single styled glyphs too. Allow
+      // overlays without converting their existing style or doubling marks.
+      if (overlay && (/^[\x21-\x7e]$/.test(g) || reverse.has(g))) { out += overlay; result.overlays++; }
       const supportedDigitFallback = !!style && /^\d$/.test(g) && !ranges[style][2] && !overlay;
       const skipped = !!(style || overlay) && out === g && !/^\s+$/u.test(g) && !supportedDigitFallback && !(style && !overlay && /^[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e]$/.test(g));
       if (skipped) result.unsupported++;

@@ -184,3 +184,20 @@ test('Drafts main menu enables only when a draft is available', async ({ page })
   await page.getByRole('dialog').getByRole('button', { name: 'Delete all drafts', exact: true }).click();
   await expect(menu).toBeDisabled();
 });
+
+test('strikethrough copies a middle stroke and toggles off on imported bold letters', async ({ page }) => {
+  await page.goto('/');
+  const editor = page.getByRole('textbox', { name: 'Post source editor' });
+  const text = String.fromCodePoint(0x1d5db, 0x1d5f2, 0x1d5f9, 0x1d5f9, 0x1d5fc);
+  await editor.evaluate(browserPaste, { plain: text });
+  await editor.focus(); await page.keyboard.press('Control+a'); await page.keyboard.press('Control+Shift+s');
+  const expected = Array.from(text, c => c + '\u0335').join('');
+  await expect(page.getByTestId('export-output')).toHaveText(expected);
+  await expect(editor.locator('s')).toHaveText(text);
+  await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (text: string) => { (window as any).copied = text; } } }));
+  await page.getByRole('button', { name: /Copy formatted text/ }).click();
+  expect(await page.evaluate(() => (window as any).copied)).toBe(expected);
+  await page.screenshot({ path: 'docs/release-evidence/strikethrough-fixed.png', fullPage: true });
+  await editor.focus(); await page.keyboard.press('Control+a'); await page.keyboard.press('Control+Shift+s');
+  await expect(page.getByTestId('export-output')).toHaveText(text); await expect(editor.locator('s')).toHaveCount(0);
+});
