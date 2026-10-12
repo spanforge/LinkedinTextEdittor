@@ -7,7 +7,7 @@ async function paste(page: Page, text: string) {
   await source(page).evaluate(browserPaste, { plain: text });
 }
 async function selectAll(page: Page) { await source(page).focus(); await page.keyboard.press('Control+a'); }
-async function openTools(page: Page) { await page.getByRole('button', { name: 'More', exact: true }).click(); }
+async function openTools(page: Page) { await page.getByRole('button', { name: 'More', exact: true }).click(); for (const group of await page.locator('.tool-group > summary').all()) await group.click(); }
 test.beforeEach(async ({ page }) => { await page.goto('/'); await expect(source(page)).toBeVisible(); });
 
 test('Unicode formatting protects tokens, preserves scripts, toggles and retains source', async ({ page }) => {
@@ -52,7 +52,7 @@ test('find spans runs, replaces without marks, and replace all is undoable', asy
 test('emoji search and snippets use saved caret and survive backup export', async ({ page }) => {
   await paste(page,'Start '); await source(page).focus(); await page.keyboard.press('End'); await page.getByRole('button', { name: 'Emoji', exact: true }).click(); await page.getByRole('textbox', { name: 'Search emoji' }).fill('thumbs');
   await page.getByRole('combobox', { name: 'Skin tone' }).selectOption('3'); await page.getByRole('button', { name: 'thumbs up sign', exact: true }).click(); await expect(output(page)).toHaveText('Start 👍🏽');
-  await page.getByRole('button', { name: '＋ Snippets' }).click(); await page.getByLabel('Name', { exact: true }).fill('Signature'); await page.getByLabel('Plain text', { exact: true }).fill('\nRegards'); await page.getByRole('button', { name: 'Save snippet', exact: true }).click(); await page.getByRole('button', { name: 'Insert', exact: true }).click(); await expect(output(page)).toHaveText('Start 👍🏽\nRegards');
+  await page.getByRole('button', { name: '＋ Saved text' }).click(); await page.getByLabel('Name', { exact: true }).fill('Signature'); await page.getByLabel('Plain text', { exact: true }).fill('\nRegards'); await page.getByRole('button', { name: 'Save text', exact: true }).click(); await page.getByRole('button', { name: 'Insert', exact: true }).click(); await expect(output(page)).toHaveText('Start 👍🏽\nRegards');
   await page.getByRole('button', { name: 'Export ↓' }).click(); const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'All drafts & snippets backup' }).click(); expect((await download).suggestedFilename()).toBe('formatter-backup.json');
 });
 
@@ -64,7 +64,7 @@ test('clipboard bytes match exact export and success waits for resolution', asyn
 });
 
 test('clipboard denied provides full selected manual text and empty copy is explicit', async ({ page }) => {
-  await page.getByRole('button', { name: '⧉ Copy formatted text' }).click(); await expect(page.getByRole('status')).toContainText('Write or paste a post first.');
+  await expect(page.getByRole('button', { name: '⧉ Copy formatted text' })).toBeDisabled();
   await paste(page,'One\n\nTwo\n'); await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.reject(new Error('Denied')) } }));
   await page.getByRole('button', { name: '⧉ Copy formatted text' }).click(); await expect(page.getByRole('textbox', { name: 'Manual copy text' })).toHaveValue('One\n\nTwo\n');
 });
@@ -77,7 +77,7 @@ test('oversized paste and invalid JSON leave current draft unchanged', async ({ 
 test('draft switching, recovery as a copy, and reset confirmation', async ({ page }) => {
   await paste(page,'First version'); await expect(page.locator('.save-status')).toHaveText('✓ Saved locally'); await paste(page,'Second version'); await expect(page.locator('.save-status')).toHaveText('✓ Saved locally');
   await page.getByRole('button', { name: /Drafts/ }).click(); await page.getByRole('button', { name: 'Recover current draft' }).click(); const records = page.locator('.record'); await records.nth(1).getByRole('button', { name: 'Preview' }).click(); await page.getByRole('button', { name: 'Restore as a new draft' }).click(); await expect(page.locator('.draft-title')).toContainText('(recovered)');
-  await openTools(page); await page.getByRole('button', { name: 'Reset draft', exact: true }).click(); await page.getByRole('button', { name: 'Cancel', exact: true }).click(); await expect(source(page)).not.toBeEmpty();
+  await page.locator('.editor-bottom').getByRole('button', { name: 'Clear draft', exact: true }).click(); await page.getByRole('button', { name: 'Cancel', exact: true }).click(); await expect(source(page)).not.toBeEmpty();
 });
 
 test('second tab pauses conflicting writes and allows a new copy', async ({ page, context }) => {
@@ -93,7 +93,7 @@ test('offline reload includes saved drafts, emoji search and export; private tex
 });
 
 test('320px layout has no page overflow, tabs work, dark appearance persists', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 760 }); await paste(page,'Mobile words'); await expect(source(page)).toBeVisible(); await page.getByRole('tab', { name: 'Export preview' }).click(); await expect(output(page)).toBeVisible(); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 320, height: 760 }); await paste(page,'Mobile words'); await expect(source(page)).toBeVisible(); await page.getByRole('tab', { name: 'Preview' }).click(); await expect(output(page)).toBeVisible(); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('button', { name: 'Switch to dark appearance' }).click(); await page.reload(); await expect(page.getByRole('button', { name: 'Switch to light appearance' })).toBeVisible();
 });
 

@@ -45,6 +45,11 @@ export class Store {
   async meta<T>(id: string, fallback: T): Promise<T> { const db = await this.open(); const v = await request(db.transaction('meta').objectStore('meta').get(id)); return v ? v.value as T : fallback; }
   async setMeta(id: string, value: unknown): Promise<void> { const db = await this.open(); const tx = db.transaction('meta', 'readwrite'); tx.objectStore('meta').put({ id, value }); await complete(tx); }
   async clear(): Promise<void> { const db = await this.open(); const tx = db.transaction(STORES, 'readwrite'); for (const name of STORES) tx.objectStore(name).clear(); await complete(tx); }
+  async clearDrafts(): Promise<void> {
+    const db = await this.open(); const tx = db.transaction(STORES, 'readwrite');
+    for (const name of ['drafts', 'revisions', 'migrationBackup']) tx.objectStore(name).clear();
+    tx.objectStore('meta').delete('active'); await complete(tx);
+  }
   async importBackup(backup: Backup): Promise<void> {
     parseImport(JSON.stringify(backup));
     const db = await this.open(); const tx = db.transaction(['drafts', 'revisions', 'meta'], 'readwrite');

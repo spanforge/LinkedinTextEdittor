@@ -58,7 +58,7 @@ export function useWorkbench() {
         const list = await refresh(); const active = await storage.meta<{ id?: string; selection?: { from: number; to: number } }>('active', {});
         const chosen = list.find(d => d.id === active.id) || list[0];
         if (chosen) { adopt(chosen); setSaveState('Saved locally'); if (active.id === chosen.id) setResumeSelection(active.selection); }
-        else { adopt(newDraft(), true); setSaveState('New local draft'); }
+        else { adopt(newDraft()); setSaveState('New local draft'); }
         const pref = await storage.meta('preferences', defaultPreferences); validatePreferences(pref); setPreferences(pref);
         const snips = await storage.meta<Snippet[]>('snippets', []); validateSnippets(snips); setSnippets(snips);
         const rec = await storage.meta<string[]>('recent', []); if (Array.isArray(rec) && rec.length <= 30 && rec.every(s => typeof s === 'string' && s.length < 100)) setRecent(rec);
@@ -96,7 +96,13 @@ export function useWorkbench() {
     if (d.id === current.current.id && !await flush()) throw Error('Resolve the save failure before deleting the active draft.');
     const latest = d.id === current.current.id ? current.current : d; await storage.remove(d.id, latest.revision);
     channel.current?.postMessage({ type: 'delete', id: d.id, tab: tabId.current }); const list = await refresh();
-    if (d.id === current.current.id) { adopt(list[0] || newDraft(), !list.length); clearConflict(); setSaveState(list.length ? 'Saved locally' : 'New local draft'); }
+    if (d.id === current.current.id) {
+      const next = list[0] || newDraft();
+      adopt(next); clearConflict(); setResumeSelection(undefined);
+      setSaveState(list.length ? 'Saved locally' : 'New local draft');
+      await storage.setMeta('active', list.length ? { id: next.id } : {});
+    }
+    notify('Draft deleted.');
   }
   async function setPreference(patch: Partial<Preferences>) { const next = { ...preferences, ...patch }; setPreferences(next); try { await storage.setMeta('preferences', next); } catch { notify('Preference could not be saved. It remains active in this tab.'); } }
   async function saveSnippets(next: Snippet[]) { validateSnippets(next); await storage.setMeta('snippets', next); setSnippets(next); }
@@ -114,8 +120,16 @@ export function useWorkbench() {
       finally { maintenance.current = false; }
     } else await create(data.editorDocument, data.title);
   }
-  async function deleteAll() { maintenance.current = true; try { if (saving.current) await saving.current; await storage.clear(); setSnippets([]); setRecent([]); setPreferences(defaultPreferences); adopt(newDraft(), true); clearConflict(); await refresh(); channel.current?.postMessage({ type: 'reset', tab: tabId.current }); setSaveState('Local data removed; new empty draft'); } finally { maintenance.current = false; } }
+  async function deleteDrafts() {
+    maintenance.current = true;
+    try {
+      if (saving.current) await saving.current;
+      await storage.clearDrafts(); adopt(newDraft()); clearConflict(); setResumeSelection(undefined);
+      await refresh(); channel.current?.postMessage({ type: 'reset', tab: tabId.current });
+      setSaveState('Drafts removed; new empty draft'); notify('All drafts deleted.');
+    } finally { maintenance.current = false; }
+  }
   async function saveCaret(selection: { from: number; to: number }) { if (!ready || composing.current) return; try { await storage.setMeta('active', { id: current.current.id, selection }); } catch { /* Caret persistence is best effort. */ } }
-  return { draft, drafts, corrupt, ready, saveState, message, notify, conflict, preferences, snippets, recent, resumeSelection, loadVersion, composing, edit, rename, flush, select, create, keepCopy, reload, remove, setPreference, saveSnippets, chooseEmoji, backup, importData, deleteAll, saveCaret, refresh };
+  return { draft, drafts, corrupt, ready, saveState, message, notify, conflict, preferences, snippets, recent, resumeSelection, loadVersion, composing, edit, rename, flush, select, create, keepCopy, reload, remove, setPreference, saveSnippets, chooseEmoji, backup, importData, deleteDrafts, saveCaret, refresh };
 }
 export type Workbench = ReturnType<typeof useWorkbench>;

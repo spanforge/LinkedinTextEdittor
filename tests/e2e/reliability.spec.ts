@@ -24,16 +24,16 @@ test('corrupted saved draft cannot overwrite or prevent valid drafts opening', a
 });
 
 test('template replace confirms, spacing preserves intentional characters, reset undo restores', async ({page})=> {
-  await paste(page,'A  \n\n\nB\u00a0\n'); await page.getByRole('button',{name:'More',exact:true}).click(); await page.getByRole('button',{name:'Trim trailing spaces',exact:true}).click(); await expect(output(page)).toHaveText('A\n\n\nB\u00a0\n'); await page.getByRole('button',{name:'Collapse blank lines',exact:true}).click(); await expect(output(page)).toHaveText('A\n\nB\u00a0\n'); await page.getByRole('button',{name:'Close dialog'}).click();
+  await paste(page,'A  \n\n\nB\u00a0\n'); await page.getByRole('button',{name:'More',exact:true}).click(); for (const group of await page.locator('.tool-group > summary').all()) await group.click(); await page.getByRole('button',{name:'Trim trailing spaces',exact:true}).click(); await expect(output(page)).toHaveText('A\n\n\nB\u00a0\n'); await page.getByRole('button',{name:'Collapse blank lines',exact:true}).click(); await expect(output(page)).toHaveText('A\n\nB\u00a0\n'); await page.getByRole('button',{name:'Close dialog'}).click();
   await page.getByRole('button',{name:'▧ Templates'}).click(); await page.getByRole('button',{name:'Replace draft…'}).click(); await page.getByRole('button',{name:'Cancel',exact:true}).click(); await expect(output(page)).toHaveText('A\n\nB\u00a0\n');
-  await page.getByRole('button',{name:'More',exact:true}).click(); await page.getByRole('button',{name:'Reset draft',exact:true}).click(); await page.getByRole('button',{name:'Confirm',exact:true}).click(); await expect(source(page)).toHaveText(''); await page.getByRole('button',{name:'Undo',exact:true}).click(); await expect(output(page)).toHaveText('A\n\nB\u00a0\n');
+  await page.locator('.editor-bottom').getByRole('button',{name:'Clear draft',exact:true}).click(); await page.getByRole('dialog').getByRole('button',{name:'Clear draft',exact:true}).click(); await expect(source(page)).toHaveText(''); await page.locator('.toolbar').getByRole('button',{name:'Undo',exact:true}).click(); await expect(output(page)).toHaveText('A\n\nB\u00a0\n');
 });
 
 test('valid draft import is a new copy and cancel changes nothing', async ({page})=> {
   await paste(page,'Current words'); await expect(page.locator('.save-status')).toHaveText('✓ Saved locally');
   const d=await page.evaluate(()=>new Promise<any>(resolve=>{const req=indexedDB.open('sriram-linkedin-formatter',1);req.onsuccess=()=>{const read=req.result.transaction('drafts').objectStore('drafts').getAll();read.onsuccess=()=>{req.result.close();resolve(read.result[0]);};};})); d.title='Imported words'; d.editorDocument={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Imported'}]}]};
   await page.locator('input[type=file]').setInputFiles({name:'draft.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(d))}); await page.getByRole('button',{name:'Cancel',exact:true}).click(); await expect(output(page)).toHaveText('Current words');
-  await page.locator('input[type=file]').setInputFiles({name:'draft.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(d))}); await page.getByRole('button',{name:'Confirm import'}).click(); await expect(output(page)).toHaveText('Imported'); await expect(page.locator('.draft-title')).toContainText('Imported words'); await page.getByRole('button',{name:/Drafts/}).click(); await expect(page.locator('.record')).toHaveCount(2);
+  await page.locator('input[type=file]').setInputFiles({name:'draft.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(d))}); await page.getByRole('button',{name:'Import draft'}).click(); await expect(output(page)).toHaveText('Imported'); await expect(page.locator('.draft-title')).toContainText('Imported words'); await page.getByRole('button',{name:/Drafts/}).click(); await expect(page.locator('.record')).toHaveCount(2);
 });
 
 test('composition lifecycle keeps partial Tamil out of saved and generated state', async ({page})=> {
@@ -42,9 +42,9 @@ test('composition lifecycle keeps partial Tamil out of saved and generated state
   await source(page).evaluate(el => el.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: 'தமிழ்' }))); await expect(output(page)).toHaveText('Committed தமிழ்'); await expect(page.locator('.save-status')).toHaveText('✓ Saved locally'); await page.reload(); await expect(output(page)).toHaveText('Committed தமிழ்');
 });
 
-test('delete all local data removes prior words and snippets after confirmation', async ({page})=> {
-  await paste(page,'Words to remove'); await expect(page.locator('.save-status')).toHaveText('✓ Saved locally'); await page.getByRole('button',{name:/Drafts/}).click(); await page.getByRole('button',{name:'Delete all local data',exact:true}).click(); await page.getByRole('button',{name:'Confirm',exact:true}).click(); await expect(source(page)).toHaveText('');
-  await expect(page.locator('.save-status')).toHaveText('✓ Saved locally'); await page.reload(); await expect(source(page)).toHaveText(''); expect(await page.evaluate(()=>new Promise<string[]>(resolve=>{const req=indexedDB.open('sriram-linkedin-formatter',1);req.onsuccess=()=>{const read=req.result.transaction('drafts').objectStore('drafts').getAll();read.onsuccess=()=>{resolve(read.result.map(d=>JSON.stringify(d.editorDocument)));req.result.close();};};}))).not.toContain('Words to remove');
+test('delete all drafts removes prior words after confirmation', async ({page})=> {
+  await paste(page,'Words to remove'); await expect(page.locator('.save-status')).toHaveText('✓ Saved locally'); await page.getByRole('button',{name:/Drafts/}).click(); await page.getByRole('button',{name:'Delete all drafts',exact:true}).click(); await page.getByRole('button',{name:'Delete all drafts',exact:true}).click(); await expect(source(page)).toHaveText('');
+  await expect(page.locator('.save-status')).toHaveText('Drafts removed; new empty draft'); await page.reload(); await expect(source(page)).toHaveText(''); expect(await page.evaluate(()=>new Promise<string[]>(resolve=>{const req=indexedDB.open('sriram-linkedin-formatter',1);req.onsuccess=()=>{const read=req.result.transaction('drafts').objectStore('drafts').getAll();read.onsuccess=()=>{resolve(read.result.map(d=>JSON.stringify(d.editorDocument)));req.result.close();};};}))).not.toContain('Words to remove');
 });
 
 test('keyboard dialogs return focus and automated WCAG checks pass in both appearances', async ({page})=> {
@@ -54,7 +54,7 @@ test('keyboard dialogs return focus and automated WCAG checks pass in both appea
 });
 
 test('200% zoom equivalent layout has no horizontal scrolling', async ({page})=> {
-  await page.setViewportSize({width:640,height:450}); await paste(page,'https://example.com/'+ 'longpath'.repeat(50)); expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.getByRole('tab',{name:'Export preview'}).click(); await expect(output(page)).toBeVisible(); expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({width:640,height:450}); await paste(page,'https://example.com/'+ 'longpath'.repeat(50)); expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.getByRole('tab',{name:'Preview'}).click(); await expect(output(page)).toBeVisible(); expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('HTML-only clipboard is flattened in inert memory without image requests', async ({page})=> {
