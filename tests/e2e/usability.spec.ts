@@ -59,14 +59,14 @@ for (const width of [1280, 320]) {
     await clear.click(); await page.getByRole('dialog').getByRole('button', { name: 'Clear draft', exact: true }).click();
     await expect(editor).toHaveText(''); await expect(clear).toBeDisabled();
     await expect(page.locator('.draft-title')).toHaveText(title!);
-    await expect(page.getByRole('status')).toContainText('Draft cleared.');
-    await page.getByRole('status').getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect(page.locator('.live-status')).toContainText('Draft cleared.');
+    await page.locator('.live-status').getByRole('button', { name: 'Undo', exact: true }).click();
     await expect(editor).toHaveText('Keep my wordsSecond line'); await expect(preview).toHaveText(original!);
-    await expect(page.getByRole('status')).toContainText('Draft restored.');
+    await expect(page.locator('.live-status')).toContainText('Draft restored.');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await clear.click(); await page.getByRole('dialog').getByRole('button', { name: 'Clear draft', exact: true }).click();
     await editor.focus(); await page.keyboard.type('New words');
-    await expect(page.getByRole('status').getByRole('button', { name: 'Undo', exact: true })).toHaveCount(0);
+    await expect(page.locator('.live-status').getByRole('button', { name: 'Undo', exact: true })).toHaveCount(0);
   });
 }
 for (const width of [1280, 768, 320]) {
@@ -128,7 +128,7 @@ test('delete all drafts works with empty drafts and remains empty after reload',
   await page.getByRole('button', { name: 'Delete all drafts', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete all drafts', exact: true }).click();
   await expect.poll(() => storedDraftIds(page)).toEqual([]);
-  await expect(page.getByRole('status')).toContainText('All drafts deleted.');
+  await expect(page.locator('.live-status')).toContainText('All drafts deleted.');
   await page.waitForTimeout(1200);
   expect(await storedDraftIds(page)).toEqual([]);
   await page.reload(); await expect(page.getByRole('button', { name: /Drafts/ })).toBeDisabled();

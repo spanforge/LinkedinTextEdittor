@@ -2,6 +2,8 @@
 
 Automated implementation checks support a local beta. Complete and record the human gates below before public release. Never publish a test post without separate owner authorization.
 
+Use [the human acceptance procedures](MANUAL_ACCEPTANCE.md) to complete the real-device and LinkedIn checks. Desktop automation does not close those gates.
+
 ## Required evidence
 
 - [ ] Record the final owner-approved name, domain, hosting headers and release approval.
@@ -13,7 +15,7 @@ Automated implementation checks support a local beta. Complete and record the hu
 - [ ] Test a user-owned LinkedIn composer on desktop web, Android app and iOS app without publishing. Verify glyphs, protected URLs/query strings, hashtags, @name plain text, whitespace, repeated blank lines and final newlines.
 - [ ] Establish the current feed-post length limit and counting behaviour using real pastes. Record observed results and adjust `config.advisoryLimit`. Never advertise guaranteed acceptance based on the app counter.
 - [ ] Measure toolbar and preview response within 100 ms for a 3,000-unit draft on a representative mid-range device. Desktop headless timings are supporting evidence only.
-- [ ] Record production compressed JS/CSS under 350 KB excluding lazy-loaded emoji data, or obtain and document a budget exception.
+- [x] Record production compressed JS/CSS under 350 KB excluding lazy-loaded emoji data: 257.1 KiB on 15 October 2026; see [hardening evidence](release-evidence/HARDENING.md).
 - [ ] Inspect production network requests for privacy; confirm no text, selections, draft titles, clipboard data or emoji queries are transmitted.
 - [ ] Exercise offline startup after an initial complete online load: edit, emoji search, saved draft access, copy and exports. Verify safe updates and failed-install recovery on a real device.
 - [ ] Run five-user moderated usability sessions, including one mobile-first participant. Target 4/5 completing paste/select/bold/emoji/copy in 60 seconds without coaching; all 5 must recover original words through undo or plain export.

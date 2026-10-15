@@ -1,0 +1,24 @@
+{
+  "recordedAt": "2026-10-15T03:56:41.924Z",
+  "browser": "155.0.8059.40",
+  "sourceUnits": 3000,
+  "toolbarToPreviewFrameMs": [
+    41.1,
+    19.5,
+    19.8,
+    10.4,
+    18.9,
+    16.2,
+    19.4,
+    9.3,
+    16,
+    9.3
+  ],
+  "medianMs": 18.9,
+  "p95Ms": 41.1,
+  "errors": [],
+  "notes": [
+    "Headless desktop Chrome production build. Measures formatting click to the animation frame after preview text changes.",
+    "Supporting desktop evidence only; real mid-range mobile timing and real-device selection remain unverified."
+  ]
+}

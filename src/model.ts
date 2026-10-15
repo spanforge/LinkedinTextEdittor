@@ -3,7 +3,7 @@ export type Mark = { type: 'bold' | 'italic' | 'underline' | 'strike' | 'family'
 export type Inline = { type: 'text'; text: string; marks?: Mark[] } | { type: 'hardBreak' };
 export type Paragraph = { type: 'paragraph'; attrs?: { listType?: 'hyphen' | 'bullet' | 'number' | null }; content?: Inline[] };
 export type Doc = { type: 'doc'; content: Paragraph[] };
-export type Preferences = { theme: 'light' | 'dark'; guidance: boolean; dismissedIntro: boolean; fontSize?: number; lineSpacing?: number; editorWidth?: 'comfortable' | 'wide' };
+export type Preferences = { theme: 'light' | 'dark'; guidance: boolean; dismissedIntro: boolean; fontSize?: number; lineSpacing?: number; editorWidth?: 'comfortable' | 'wide'; writingMode?: boolean };
 export type Draft = { schemaVersion: 1; id: string; title: string; createdAt: string; updatedAt: string; revision: number; editorDocument: Doc; preferences: Partial<Preferences>; favourite?: boolean; status?: 'Idea' | 'Writing' | 'Ready' };
 export type Snippet = { id: string; title: string; text: string };
 export type Backup = { schemaVersion: 1; kind: 'backup'; drafts: Draft[]; snippets: Snippet[]; preferences: Preferences; recent: string[] };
@@ -42,7 +42,8 @@ export function validateDraft(value: unknown): asserts value is Draft {
   validatePreferences(value.preferences, true); validateDoc(value.editorDocument);
 }
 export function validatePreferences(v: unknown, partial = false): asserts v is Preferences {
-  if (!object(v) || !exact(v, ['theme', 'guidance', 'dismissedIntro', 'fontSize', 'lineSpacing', 'editorWidth']) || (!partial && ['theme', 'guidance', 'dismissedIntro'].some(k => !(k in v))) || (v.theme !== undefined && !['light', 'dark'].includes(v.theme as string)) || (v.guidance !== undefined && typeof v.guidance !== 'boolean') || (v.dismissedIntro !== undefined && typeof v.dismissedIntro !== 'boolean')) throw Error('Invalid preferences.');
+  if (!object(v) || !exact(v, ['theme', 'guidance', 'dismissedIntro', 'fontSize', 'lineSpacing', 'editorWidth', 'writingMode']) || (!partial && ['theme', 'guidance', 'dismissedIntro'].some(k => !(k in v))) || (v.theme !== undefined && !['light', 'dark'].includes(v.theme as string)) || (v.guidance !== undefined && typeof v.guidance !== 'boolean') || (v.dismissedIntro !== undefined && typeof v.dismissedIntro !== 'boolean')) throw Error('Invalid preferences.');
+  if (v.writingMode !== undefined && typeof v.writingMode !== 'boolean') throw Error('Invalid writing mode.');
   if ((v.fontSize !== undefined && (typeof v.fontSize !== 'number' || ![16, 18, 20, 22].includes(v.fontSize))) || (v.lineSpacing !== undefined && (typeof v.lineSpacing !== 'number' || ![1.5, 1.7, 2].includes(v.lineSpacing))) || (v.editorWidth !== undefined && !['comfortable', 'wide'].includes(v.editorWidth as string))) throw Error('Invalid writing preferences.');
 }
 export function validateSnippets(v: unknown): asserts v is Snippet[] {

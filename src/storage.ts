@@ -2,6 +2,8 @@ import { config } from './config';
 import { fromText, newDraft, parseImport, validateDraft, validateDoc, type Backup, type Draft, type Preferences, type Snippet } from './model';
 const DB_NAME = 'sriram-linkedin-formatter';
 const STORES = ['drafts', 'revisions', 'meta', 'migrationBackup'];
+export type RecoveryEntry = { id: string; label: string; draft: Draft };
+type RevisionRecord = { id: string; snapshots: Draft[]; checkpoints?: Draft[]; named?: RecoveryEntry[] };
 export class ConflictError extends Error { constructor() { super('This draft changed in another tab. Save this tab as a new copy or reload the saved version.'); } }
 export class Store {
   private promise?: Promise<IDBDatabase>;
@@ -29,7 +31,13 @@ export class Store {
           if (!existing && count.result >= config.draftLimit) { failure = Error('50 drafts reached. Export or delete a draft before creating another.'); tx.abort(); return; }
           store.put(next);
           const revisions = tx.objectStore('revisions'); const read = revisions.get(draft.id);
-          read.onsuccess = () => revisions.put({ id: draft.id, snapshots: [...(read.result?.snapshots || []), next].slice(-config.recoveryLimit) });
+          read.onsuccess = () => {
+            const previous = read.result as RevisionRecord | undefined;
+            const checkpoints = previous?.checkpoints || (previous?.snapshots?.length ? [previous.snapshots[0]] : []);
+            const last = checkpoints.at(-1);
+            const spaced = !last || Date.parse(next.updatedAt) - Date.parse(last.updatedAt) >= 5 * 60_000;
+            revisions.put({ id: draft.id, snapshots: [...(previous?.snapshots || []), next].slice(-config.recoveryLimit), checkpoints: (spaced ? [...checkpoints, next] : checkpoints).slice(-12), named: previous?.named || [] });
+          };
         };
       };
       tx.oncomplete = () => resolve(next); tx.onerror = () => reject(failure || tx.error || Error('Could not save.')); tx.onabort = () => reject(failure || tx.error || Error('Could not save.'));
@@ -42,6 +50,33 @@ export class Store {
     try { await complete(tx); } catch (e) { if (conflict) throw new ConflictError(); throw e; }
   }
   async revisions(id: string): Promise<Draft[]> { const db = await this.open(); const v = await request(db.transaction('revisions').objectStore('revisions').get(id)); return (v?.snapshots || []).filter((d: unknown) => { try { validateDraft(d); return true; } catch { return false; } }); }
+  async recovery(id: string): Promise<RecoveryEntry[]> {
+    const db = await this.open();
+    const record = await request<RevisionRecord | undefined>(db.transaction('revisions').objectStore('revisions').get(id));
+    const entries = [
+      ...(record?.named || []),
+      ...(record?.snapshots || []).map(draft => ({ id: `recent-${draft.revision}`, label: `Recent save ${draft.revision}`, draft })),
+      ...(record?.checkpoints || []).map(draft => ({ id: `checkpoint-${draft.revision}`, label: `Checkpoint ${draft.revision}`, draft })),
+    ];
+    return entries.filter(entry => { try { validateDraft(entry.draft); return typeof entry.label === 'string'; } catch { return false; } })
+      .sort((a, b) => b.draft.updatedAt.localeCompare(a.draft.updatedAt));
+  }
+  async checkpoint(id: string, label: string): Promise<void> {
+    label = label.trim(); if (!label || label.length > 100) throw Error('Use a version name from 1 to 100 characters.');
+    const db = await this.open(); const tx = db.transaction(['drafts', 'revisions'], 'readwrite');
+    let missing = false;
+    const read = tx.objectStore('drafts').get(id);
+    read.onsuccess = () => {
+      if (!read.result) { missing = true; tx.abort(); return; }
+      const draft = read.result as Draft;
+      const versions = tx.objectStore('revisions'); const saved = versions.get(id);
+      saved.onsuccess = () => {
+        const record = saved.result as RevisionRecord | undefined;
+        versions.put({ ...record, id, snapshots: record?.snapshots || [], named: [...(record?.named || []), { id: crypto.randomUUID(), label, draft }].slice(-10) });
+      };
+    };
+    try { await complete(tx); } catch (error) { if (missing) throw Error('Save this draft before naming a version.'); throw error; }
+  }
   async meta<T>(id: string, fallback: T): Promise<T> { const db = await this.open(); const v = await request(db.transaction('meta').objectStore('meta').get(id)); return v ? v.value as T : fallback; }
   async setMeta(id: string, value: unknown): Promise<void> { const db = await this.open(); const tx = db.transaction('meta', 'readwrite'); tx.objectStore('meta').put({ id, value }); await complete(tx); }
   async clear(): Promise<void> { const db = await this.open(); const tx = db.transaction(STORES, 'readwrite'); for (const name of STORES) tx.objectStore(name).clear(); await complete(tx); }

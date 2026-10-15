@@ -1,12 +1,13 @@
 import { Extension, Mark as TiptapMark, type Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import { Plugin } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { closeHistory } from '@tiptap/pm/history';
 import { Slice } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { config } from './config';
 import { fromText, normalize, sourceText, validateDoc, type Doc } from './model';
 
+const navigationKey = new PluginKey<number | null>('navigationTarget');
 const Family = TiptapMark.create({ name: 'family', addAttributes: () => ({ family: { default: 'sans' } }), parseHTML: () => [], renderHTML: ({ HTMLAttributes }) => ['span', { 'data-family': HTMLAttributes.family }, 0] });
 export function extensions(notify: (text: string) => void) {
   return [StarterKit.configure({ blockquote: false, bulletList: false, orderedList: false, listItem: false, listKeymap: false, code: false, codeBlock: false, heading: false, horizontalRule: false, link: false, trailingNode: false, hardBreak: { keepMarks: false }, undoRedo: { depth: config.historyDepth } }), Family,
@@ -15,7 +16,7 @@ export function extensions(notify: (text: string) => void) {
         const overlay = (type: 'strike' | 'underline') => { if (this.editor.state.selection.empty) { notify('Select text to apply this effect.'); return true; } return this.editor.chain().unsetMark(type === 'strike' ? 'underline' : 'strike').toggleMark(type).run(); };
         return { 'Mod-u': () => overlay('underline'), 'Mod-Shift-s': () => overlay('strike'), Enter: () => { const result = this.editor.commands.splitBlock(); if (result && this.editor.state.selection.$from.parent.content.size === 0) this.editor.view.dispatch(this.editor.state.tr.setStoredMarks([])); return result; } };
       },
-      addProseMirrorPlugins() { return [new Plugin({
+      addProseMirrorPlugins() { return [new Plugin<number | null>({ key: navigationKey, state: { init: () => null, apply(tr, previous) { const next = tr.getMeta('navigationTarget'); return next !== undefined ? next : previous === null ? null : tr.mapping.map(previous); } }, props: { decorations(state) { const pos = navigationKey.getState(state); if (pos == null) return null; const node = state.doc.nodeAt(pos); return node?.type.name === 'paragraph' ? DecorationSet.create(state.doc, [Decoration.node(pos, pos + node.nodeSize, { class: 'navigation-target' })]) : null; } } }), new Plugin({
         filterTransaction(tr) { if (!tr.docChanged) return true; const length = sourceText(tr.doc.toJSON() as Doc).length; if (length > config.sourceLimit) { queueMicrotask(() => notify(`Insertion rejected: maximum ${config.sourceLimit.toLocaleString()} source UTF-16 units. Nothing was truncated.`)); return false; } return true; },
         props: { decorations(state) { const decorations: Decoration[] = []; if (!state.selection.empty) decorations.push(Decoration.inline(state.selection.from, state.selection.to, { class: 'saved-selection' })); let number = 0; state.doc.forEach((node, pos) => { if (!node.content.size || node.attrs.listType !== 'number') number = 0; else decorations.push(Decoration.node(pos, pos + node.nodeSize, { 'data-number': String(++number) })); }); return DecorationSet.create(state.doc, decorations); } }
       })]; }

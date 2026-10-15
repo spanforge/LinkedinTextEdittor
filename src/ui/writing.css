@@ -1,0 +1,221 @@
+/* Writing surface and comfort settings */
+.writing-controls,.comfort-controls {
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin:0 0 16px;
+}
+.writing-controls label {
+  display:flex;
+  gap:8px;
+  align-items:center;
+  font-size:13px;
+}
+.writing-controls select {
+  width:auto;
+}
+.comfort-controls {
+  padding:16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+.comfort-controls label {
+  display:grid;
+  gap:6px;
+  font-size:13px;
+  flex:1;
+  min-width:140px;
+}
+.comfort-controls p {
+  width:100%;
+  margin:0;
+  font-size:13px;
+  color:var(--muted);
+}
+.editor-card:focus-within {
+  border-color:var(--blue);
+  box-shadow:0 0 0 2px var(--blue-bg);
+}
+.editor-area {
+  cursor:text;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+}
+.editor-area>.tiptap {
+  flex:1;
+}
+.editor-area>div:first-child {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-height:inherit;
+}
+.editor-area .ProseMirror {
+  flex:1;
+  padding:24px;
+  min-height:390px;
+  font-size:var(--writing-size);
+  line-height:var(--writing-leading);
+  caret-color:var(--blue);
+  outline:none;
+}
+.ProseMirror p {
+  line-height:inherit;
+}
+.ProseMirror:not(.ProseMirror-focused) .saved-selection {
+  background:#b5d5ff;
+  color:#172b4d;
+}
+.ProseMirror ::selection {
+  background:#b5d5ff;
+  color:#172b4d;
+}
+.empty-hint {
+  pointer-events:none;
+}
+.empty-hint button {
+  pointer-events:auto;
+}
+.toolbar {
+  position:sticky;
+  top:0;
+  z-index:4;
+  background:var(--surface);
+  align-content:start;
+}
+.preview-paragraph {
+  cursor:text;
+  border-radius:3px;
+  min-width:4px;
+}
+.preview-paragraph:hover {
+  background:var(--blue-bg);
+}
+.preview-paragraph:focus-visible {
+  outline:2px solid var(--blue);
+  outline-offset:2px;
+}
+.feed-heading {
+  display:grid;
+  gap:5px;
+  padding:16px 24px;
+  border-bottom:1px solid var(--border);
+}
+.feed-heading span {
+  font-size:12px;
+  color:var(--muted);
+}
+.output-wrap.feed-collapsed {
+  min-height:0;
+  max-height:none;
+  height:calc(3 * 1.7 * 16px + 48px);
+  overflow:hidden;
+}
+.feed-toggle {
+  margin:8px 20px 16px;
+  color:var(--blue);
+  align-self:flex-start;
+}
+.draft-organise {
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+.draft-organise select {
+  width:auto;
+  max-width:180px;
+}
+.width-wide {
+  max-width:1500px;
+}
+.width-wide .workspace {
+  grid-template-columns:1.25fr 1fr;
+}
+.focus-mode .workspace {
+  grid-template-columns:1fr;
+  max-width:860px;
+  margin:auto;
+}
+.focus-mode.width-wide .workspace {
+  max-width:1200px;
+}
+.focus-mode .preview-card,.focus-mode .intro,.focus-mode .styling-guidance,.focus-mode .check-panel,.focus-mode .trust-strip,.focus-mode footer,.focus-mode .mobile-tabs {
+  display:none;
+}
+.focus-mode .editor-card {
+  display:block;
+}
+.focus-mode .editor-area {
+  max-height:none;
+  min-height:60vh;
+}
+.focus-mode .ProseMirror {
+  min-height:60vh;
+}
+.focus-mode .writing-controls {
+  position:sticky;
+  top:0;
+  z-index:6;
+  background:var(--bg);
+  padding:8px 0;
+}
+.focus-mode .toolbar {
+  top:var(--controls-height,0px);
+}
+@media(max-width:767px) {
+  .writing-controls {
+    gap:6px;
+  }
+  .writing-controls>button {
+    flex:1;
+    font-size:12px;
+  }
+  .writing-controls label {
+    width:100%;
+    justify-content:space-between;
+  }
+  .editor-area .ProseMirror {
+    padding:18px;
+    min-height:300px;
+  }
+  .editor-area {
+    padding:0;
+  }
+  .comfort-controls label {
+    min-width:110px;
+  }
+  .focus-mode .toolbar {
+    position:static;
+  }
+  .focus-mode .writing-controls {
+    position:static;
+  }
+  .focus-mode .mobile-action-bar {
+    display:none;
+  }
+  .focus-mode .copy-actions {
+    display:grid;
+  }
+  .output-wrap.feed-collapsed {
+    height:calc(3 * 1.7 * 17px + 36px);
+  }
+}
+.ProseMirror p.navigation-target {
+  background:var(--blue-bg);
+  outline:2px solid var(--blue);
+  outline-offset:3px;
+  border-radius:4px;
+}
+.preview-paragraph:empty {
+  display:inline-block;
+  min-height:1em;
+}
+.backup-reminder {
+  margin-top:16px;
+}
+.focus-mode .backup-reminder {
+  display:none;
+}

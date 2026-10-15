@@ -34,3 +34,5 @@ Playwright writes traces for failed runs and its interactive HTML report under i
 ## Release boundary
 
 This is an implemented local beta, not public release approval. Real Tamil IME keyboards, touch-selection ergonomics, NVDA/VoiceOver, true 200% zoom, real Android/iOS/Safari surfaces, LinkedIn paste/length behaviour and representative mobile performance remain unverified. The 3,000-unit advisory stays labelled an estimate. No LinkedIn posts were published.
+
+- [15 October hardening evidence](HARDENING.md): recovery/backup improvements, cross-browser checks, performance samples, and outstanding human acceptance.

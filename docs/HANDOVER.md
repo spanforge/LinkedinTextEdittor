@@ -14,7 +14,7 @@ Keep the same browser origin while testing; localhost and 127.0.0.1 have separat
 - `operations.ts`: spacing, pasted-list cleanup, conservative Markdown parser handling, imported-style reverse mapping and original templates.
 - `storage.ts`: IndexedDB transactions, revision CAS checks, bounded recovery, backup restore and legacy migration.
 - `useWorkbench.ts`: hydration, autosave, active-draft management, tab coordination, memory fallback, settings and snippets.
-- `ui/`: accessible dialogs, responsive editor/preview, tool panels and draft workflows.
+- `ui/`: accessible dialogs, responsive editor/preview, tool panels and draft workflows. `PostPreview.tsx` memoizes preview rendering and provides one tab stop with arrow navigation; `useWritingLayout.ts` measures sticky control height; `useBackupReminder.ts` records full backup download initiation; `writing.css` owns the writing controls and layout rules.
 - `offline.ts` and `scripts/build-offline.mjs`: registration, waiting-worker prompt, safe activation, versioned static precache and public metadata.
 
 All output comes from the canonical ordinary text and marks. Preview and formatted copy share the serializer; no HTML copy path exists. Imported Unicode is preserved until explicitly converted. HTML paste flattening uses an inert template fragment only when an HTML-only clipboard lacks plain text; it never attaches imported elements to the document.
@@ -23,7 +23,7 @@ All output comes from the canonical ordinary text and marks. Preview and formatt
 
 Edit `src/config.ts` for product identity, limits, timings, widths and advisory thresholds. Set the final HTTPS origin in `.env.local` using `VITE_PUBLIC_URL` for canonical URLs and sitemap. The build rejects credentials, queries and fragments in that setting. Static assets assume root hosting.
 
-Limits: 50 drafts; 20,000 source UTF-16 units each; 30 snippets of 1,000 units; 1 MB JSON import; last three successful revisions per draft; at least 100 history groups in the active session. Continuous typing follows ProseMirror grouping. Repeated/newline spacing is preserved unless the user applies a named command. JSON schemas are in `schemas/`; runtime validation also enforces aggregate source length, unique IDs and mutually exclusive overlays.
+Limits: 50 drafts; 20,000 source UTF-16 units each; 30 snippets of 1,000 units; 1 MB JSON import; last three successful revisions, 12 automatic checkpoints spaced five minutes apart, and 10 named versions per draft; at least 100 history groups in the active session. Continuous typing follows ProseMirror grouping. Repeated/newline spacing is preserved unless the user applies a named command. JSON schemas are in `schemas/`; runtime validation also enforces aggregate source length, unique IDs and mutually exclusive overlays.
 
 Exported collections can exceed the 1 MB import cap when many maximum-size drafts are stored. Retain the full raw backup, and export individual editable drafts for separate restores. Do not silently truncate a backup or relax import validation. A future multipart backup format needs a separately versioned schema and tests.
 
@@ -33,7 +33,7 @@ Drafts, revision snapshots, preferences, recent emoji identifiers and snippets l
 
 Saving compares the expected revision inside the same read/write transaction. BroadcastChannel provides prompt conflict notices; revision checks are authoritative even when broadcast is absent. Conflicts pause saves and offer a new copy or saved-version reload. Destructive whole-store operations pause autosave and wait for in-flight writes.
 
-The supported migration is legacy schema 0 `{ id, title, text }` to schema 1, with the old payload retained in `migrationBackup`. Unknown/corrupt schemas are never automatically rewritten. Access the raw backup through Drafts. Recoverable saved revisions restore as new drafts rather than replacing existing ones.
+The supported migration is legacy schema 0 `{ id, title, text }` to schema 1, with the old payload retained in `migrationBackup`. Unknown/corrupt schemas are never automatically rewritten. Access the raw backup through Drafts. Recoverable saved revisions restore as new drafts rather than replacing existing ones. Named versions are read atomically from the saved draft. Recent revisions and automatic/named checkpoints are local recovery data, excluded from exported backups; deleting a draft removes all its recovery data. Legacy revision records are read without a database version change.
 
 Draft content never enters network requests, URLs, telemetry or application logs. Emoji metadata is fetched only from the app origin. The service worker caches static assets only. `_headers` supplies deployment CSP and security headers; the HTML also includes CSP for local preview. No browser clipboard read occurs in the app.
 
@@ -46,3 +46,7 @@ Review package and cache changes each release. Update pinned dependencies delibe
 ## Owner responsibilities and release status
 
 The owner selects the final domain and brand, approves product copy and release, and organises real device/LinkedIn paste and usability testing. The developer maintains mappings, parser boundaries, tests, compatibility evidence, licences and service-worker updates. The app is a local beta until the human launch checklist is satisfied. Keep the plain-text fallback visible during compatibility investigations. Future telemetry, account access, AI, scheduling and cloud sync require separate scope and consent.
+
+## Hardening verification
+
+Use `playwright.production.config.ts` for the production/offline suite on port 3002 and `playwright.local.config.ts` for dev-only interaction checks on port 3001. The full workflow suite includes offline reload and must run against production. Firefox may require execution outside the process sandbox on this host. See `MANUAL_ACCEPTANCE.md` for the remaining human checks. Desktop timing evidence is in `release-evidence/hardening-performance.json`; it is not mobile timing evidence.

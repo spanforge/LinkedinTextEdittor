@@ -1,0 +1,17 @@
+{
+  "stats": {
+    "total": 216,
+    "expected": 213,
+    "unexpected": 3,
+    "flaky": 0,
+    "skipped": 0,
+    "ok": false
+  },
+  "projectNames": [
+    "chrome",
+    "edge",
+    "firefox",
+    "webkit"
+  ],
+  "note": "Full production run before final accessible-description/help changes. Three failures: one Chrome timeout and two ambiguous status selectors in WebKit. Follow-up targeted results recorded separately."
+}

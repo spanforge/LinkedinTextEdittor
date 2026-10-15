@@ -1,0 +1,18 @@
+{
+  "stats": {
+    "total": 24,
+    "expected": 24,
+    "unexpected": 0,
+    "flaky": 0,
+    "skipped": 0,
+    "ok": true
+  },
+  "projectNames": [
+    "chrome",
+    "edge",
+    "firefox",
+    "webkit"
+  ],
+  "durationMs": 71717.295,
+  "scope": "Final production build. Preview keyboard navigation and accessible text, named recovery, accessibility, clear/undo at desktop and mobile widths, exact clipboard bytes. All three failures from the full run are covered here."
+}

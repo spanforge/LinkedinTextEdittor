@@ -1,9 +1,36 @@
 import 'fake-indexeddb/auto';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Store, defaultPreferences } from '../../src/storage';
 import { newDraft, fromText, sourceText, type Backup } from '../../src/model';
 const store = new Store(); beforeEach(async () => { await store.clear(); });
 describe('Draft durability and atomic writes', () => {
+  it('keeps spaced checkpoints and named versions after recent saves roll over', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+      let draft = await store.save(newDraft(fromText('Original words')), 0);
+      await store.checkpoint(draft.id, 'Before rewriting');
+      for (let i = 0; i < 5; i++) draft = await store.save({ ...draft, editorDocument: fromText(`Edit ${i}`) }, draft.revision);
+      let entries = await store.recovery(draft.id);
+      expect(entries.find(e => e.label === 'Before rewriting')?.draft.editorDocument).toEqual(fromText('Original words'));
+      expect(entries.filter(e => e.label.startsWith('Checkpoint'))).toHaveLength(1);
+      vi.setSystemTime(new Date('2026-01-01T00:05:00Z'));
+      draft = await store.save(draft, draft.revision);
+      entries = await store.recovery(draft.id);
+      expect(entries.filter(e => e.label.startsWith('Checkpoint'))).toHaveLength(2);
+      expect(entries.filter(e => e.label.startsWith('Recent save'))).toHaveLength(3);
+      for (let i = 0; i < 12; i++) await store.checkpoint(draft.id, `Named ${i}`);
+      expect((await store.recovery(draft.id)).filter(e => e.label.startsWith('Named'))).toHaveLength(10);
+      await store.remove(draft.id, draft.revision);
+      expect(await store.recovery(draft.id)).toEqual([]);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('rejects missing drafts and invalid checkpoint names without creating records', async () => {
+    await expect(store.checkpoint('missing', 'A version')).rejects.toThrow('Save this draft');
+    await expect(store.checkpoint('missing', '  ')).rejects.toThrow('version name');
+    expect(await store.recovery('missing')).toEqual([]);
+  });
   it('commits source and marks and keeps only the last three successful revisions', async () => {
     let draft = newDraft(fromText('தமிழ் 👨‍👩‍👧‍👦')); for (let i = 0; i < 5; i++) draft = await store.save(draft, draft.revision);
     expect(await store.get(draft.id)).toEqual(draft); expect((await store.revisions(draft.id)).map(d => d.revision)).toEqual([3,4,5]); expect(sourceText((await store.get(draft.id))!.editorDocument)).toBe('தமிழ் 👨‍👩‍👧‍👦');
