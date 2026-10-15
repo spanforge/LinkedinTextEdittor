@@ -104,6 +104,20 @@ export function useWorkbench() {
     }
     notify('Draft deleted.');
   }
+  async function organise(d: Draft, patch: Pick<Partial<Draft>, 'favourite' | 'status'>) {
+    if (!await flush()) throw Error('Resolve the save failure before organising drafts.');
+    if (d.id === current.current.id) {
+      const next = { ...current.current, ...patch }; validateDraft(next); adopt(next, true);
+      if (!await flush()) throw Error('Could not save draft organisation. Export a backup if saving remains unavailable.');
+      return;
+    }
+    const latest = await storage.get(d.id);
+    if (!latest) throw Error('Draft no longer available.');
+    const next = { ...latest, ...patch }; validateDraft(next);
+    const saved = await storage.save(next, latest.revision);
+    channel.current?.postMessage({ type: 'save', id: saved.id, revision: saved.revision, tab: tabId.current });
+    await refresh();
+  }
   async function setPreference(patch: Partial<Preferences>) { const next = { ...preferences, ...patch }; setPreferences(next); try { await storage.setMeta('preferences', next); } catch { notify('Preference could not be saved. It remains active in this tab.'); } }
   async function saveSnippets(next: Snippet[]) { validateSnippets(next); await storage.setMeta('snippets', next); setSnippets(next); }
   async function chooseEmoji(id: string) { const next = [id, ...recent.filter(x => x !== id)].slice(0, 30); setRecent(next); try { await storage.setMeta('recent', next); } catch { notify('Recent emoji history could not be saved.'); } }
@@ -118,7 +132,7 @@ export function useWorkbench() {
       maintenance.current = true;
       try { if (saving.current) await saving.current; await storage.importBackup(data); setSnippets(data.snippets); setPreferences(data.preferences); setRecent(data.recent); adopt(data.drafts[0] || newDraft(), !data.drafts.length); setLoadVersion(v => v + 1); clearConflict(); setResumeSelection(undefined); await refresh(); channel.current?.postMessage({ type: 'reset', tab: tabId.current }); }
       finally { maintenance.current = false; }
-    } else await create(data.editorDocument, data.title);
+    } else { await create(data.editorDocument, data.title); await organise(current.current, { favourite: data.favourite ?? false, status: data.status ?? 'Idea' }); }
   }
   async function deleteDrafts() {
     maintenance.current = true;
@@ -130,6 +144,6 @@ export function useWorkbench() {
     } finally { maintenance.current = false; }
   }
   async function saveCaret(selection: { from: number; to: number }) { if (!ready || composing.current) return; try { await storage.setMeta('active', { id: current.current.id, selection }); } catch { /* Caret persistence is best effort. */ } }
-  return { draft, drafts, corrupt, ready, saveState, message, notify, conflict, preferences, snippets, recent, resumeSelection, loadVersion, composing, edit, rename, flush, select, create, keepCopy, reload, remove, setPreference, saveSnippets, chooseEmoji, backup, importData, deleteDrafts, saveCaret, refresh };
+  return { draft, drafts, corrupt, ready, saveState, message, notify, conflict, preferences, snippets, recent, resumeSelection, loadVersion, composing, edit, rename, flush, select, create, keepCopy, reload, remove, setPreference, saveSnippets, chooseEmoji, backup, importData, deleteDrafts, saveCaret, refresh, organise };
 }
 export type Workbench = ReturnType<typeof useWorkbench>;

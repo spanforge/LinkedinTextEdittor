@@ -16,6 +16,9 @@ Open **http://localhost:3000**. The production preview exercises offline caching
 
 ## Features
 
+- Full-surface cursor placement, retained selection highlighting, a stable toolbar, expanded writing mode (Escape to exit), and preview paragraph navigation.
+- Approximate three-line feed preview with expansion; copying always includes the complete post. Saved writing comfort controls adjust font size, line spacing and editor width without changing exported text.
+- Favourite drafts, filter by Idea/Writing/Ready status, and duplicate drafts from their Actions menu. Organisation is included in JSON backups.
 - Ordinary source text with bold, italic, combined sans/serif styles, experimental underline and strike, saved selection, keyboard shortcuts, undo and redo.
 - Deterministic Unicode output with cross-run URL/email/hashtag/@name protection, unsupported-script preservation, grapheme and UTF-16 counts, Show changes, and ordinary reading view.
 - Local emoji search, categories, skin tones, recent selections and professional symbols; lists, explicit spacing commands and safe plain paste.
@@ -32,6 +35,8 @@ npm run check
 npm run build
 npm run test:e2e
 ```
+
+To run browser checks against the development editor on port 3001, use `npm run test:e2e -- --config=playwright.local.config.ts --project=chrome`. This keeps testing separate from any other application already running on port 3000.
 
 The browser suite uses installed Chrome and Edge plus Playwright Firefox and WebKit. Install those test engines with `npx playwright install firefox webkit`. Run only Chrome using `npm run test:e2e -- --project=chrome`. In this environment Firefox requires execution outside the process sandbox; this is a runner restriction, not an application permission requirement.
 

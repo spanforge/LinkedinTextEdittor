@@ -17,7 +17,7 @@ export function extensions(notify: (text: string) => void) {
       },
       addProseMirrorPlugins() { return [new Plugin({
         filterTransaction(tr) { if (!tr.docChanged) return true; const length = sourceText(tr.doc.toJSON() as Doc).length; if (length > config.sourceLimit) { queueMicrotask(() => notify(`Insertion rejected: maximum ${config.sourceLimit.toLocaleString()} source UTF-16 units. Nothing was truncated.`)); return false; } return true; },
-        props: { decorations(state) { const decorations: Decoration[] = []; let number = 0; state.doc.forEach((node, pos) => { if (!node.content.size || node.attrs.listType !== 'number') number = 0; else decorations.push(Decoration.node(pos, pos + node.nodeSize, { 'data-number': String(++number) })); }); return DecorationSet.create(state.doc, decorations); } }
+        props: { decorations(state) { const decorations: Decoration[] = []; if (!state.selection.empty) decorations.push(Decoration.inline(state.selection.from, state.selection.to, { class: 'saved-selection' })); let number = 0; state.doc.forEach((node, pos) => { if (!node.content.size || node.attrs.listType !== 'number') number = 0; else decorations.push(Decoration.node(pos, pos + node.nodeSize, { 'data-number': String(++number) })); }); return DecorationSet.create(state.doc, decorations); } }
       })]; }
     })];
 }
